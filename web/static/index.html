@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recipe Helper</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      font-size: 16px;
+      padding: 8px;
+    }
+
+    button {
+      margin-top: 12px;
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    ul {
+      margin-top: 24px;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 12px;
+    }
+
+    a {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .error {
+      color: red;
+      margin-top: 16px;
+    }
+
+    .recipe-card {
+      font-size: 15px; 
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+      background: #fff;
+    }
+
+    .recipe-title {
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍳 Recipe Helper</h1>
+
+  <p>Введите ингредиенты (через запятую):</p>
+
+  <textarea id="ingredientsInput" placeholder="курица, рис, лук, морковь"></textarea>
+
+  <br />
+  <button id="submitBtn">Найти блюда</button>
+
+  <div id="error" class="error"></div>
+
+  <ul id="results"></ul>
+
+  <script>
+    const submitBtn = document.getElementById("submitBtn");
+    const input = document.getElementById("ingredientsInput");
+    const results = document.getElementById("results");
+    const errorDiv = document.getElementById("error");
+
+    submitBtn.addEventListener("click", async () => {
+      const ingredients = input.value.trim();
+
+      results.innerHTML = "";
+      errorDiv.textContent = "";
+
+      if (!ingredients) {
+        errorDiv.textContent = "Введите ингредиенты";
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:8085/recipes/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ingredients })
+        });
+
+        if (!response.ok) {
+          let errorMessage = `Ошибка сервера: ${response.status} `;
+
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+              errorMessage += errorData.message;
+            }
+          } catch (_) {
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+
+        if (!data.dishes || data.dishes.length === 0) {
+          results.innerHTML = "<li>Ничего не найдено</li>";
+          return;
+        }
+
+        data.dishes.forEach(dish => {
+          const card = document.createElement("li");
+          card.className = "recipe-card";
+
+          const title = document.createElement("div");
+          title.className = "recipe-title";
+          title.textContent = dish.name;
+
+          const recipe = document.createElement("pre");
+          recipe.textContent = dish.recipe;
+          recipe.style.display = "none";
+          recipe.style.background = "#f7f7f7";
+          recipe.style.padding = "12px";
+          recipe.style.borderRadius = "8px";
+          recipe.style.whiteSpace = "pre-wrap";
+          recipe.style.marginTop = "8px";
+
+          title.addEventListener("click", () => {
+            recipe.style.display = recipe.style.display === "none" ? "block" : "none";
+          });
+
+          card.appendChild(title);
+          card.appendChild(recipe);
+          results.appendChild(card);
+        });
+
+      } catch (err) {
+        errorDiv.textContent = err.message;
+      }
+    });
+  </script>
+
+</body>
+</html>

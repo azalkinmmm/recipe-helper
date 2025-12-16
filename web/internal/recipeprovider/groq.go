@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -36,7 +35,7 @@ func NewGroqRecipeProvider(APIKey string) *GroqRecipeProvider {
 }
 
 const GroqURL = "https://api.groq.com/openai/v1/chat/completions"
-const AImodel = "llama-3.1-8b-instant"
+const AImodel = "meta-llama/llama-4-scout-17b-16e-instruct"
 const systemMessage = "Ты API. Ты возвращаешь ТОЛЬКО валидный JSON без пояснений."
 const userMessage = `
 У меня есть эти ингредиенты: %s. Какие блюда можно приготовить из этих ингредиентов?
@@ -53,7 +52,7 @@ const userMessage = `
 
 Правила:
 - Каждый объект ОБЯЗАТЕЛЬНО содержит "name" и "recipe"
-- "recipe" — рецепт блюда в формате: "1. первый шаг\n 2. второй шаг и т.д."
+- "recipe" — рецепт блюда в формате: "1. первый шаг\n2. второй шаг и т.д."
 - В рецепте нельзя использовать ингредиенты, которых не было в запросе
 - В рецепте не обязательно использоавть все перечисленные ингредиенты, важно чтобы они сочетались между собой
 - Если подходящих блюд нет, верни {"dishes": []}
@@ -110,7 +109,6 @@ func (p *GroqRecipeProvider) GetDishes(ingredients string) ([]Dish, error) {
 	}
 
 	answer := chatResp.Choices[0].Message.Content
-	log.Println(string(answer))
 
 	var dishes DishResponse
 	err = json.Unmarshal([]byte(answer), &dishes)

@@ -18,10 +18,15 @@ func main() {
 	}
 
 	recipeProvider := recipeprovider.NewGroqRecipeProvider(apiKey)
-	handler := handler.GetDichesHandler(recipeProvider)
+	recipesHandler := handler.GetDichesHandler(recipeProvider)
+
+	mux := http.NewServeMux()
+	staticHTMLHandler := http.FileServer(http.Dir("./static"))
+	mux.Handle("/", staticHTMLHandler)
+	mux.Handle("/recipes/", recipesHandler)
 
 	log.Println("Starting server on port", PORT)
-	err := http.ListenAndServe(PORT, handler)
+	err := http.ListenAndServe(PORT, mux)
 	if err != nil {
 		log.Fatal(err)
 	}

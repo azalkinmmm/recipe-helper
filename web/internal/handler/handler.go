@@ -13,7 +13,7 @@ type RecipeProvider interface {
 }
 
 type Query struct {
-	Message string `json:"message"`
+	Ingredients string `json:"ingredients"`
 }
 
 func GetDichesHandler(provider RecipeProvider) http.Handler {
@@ -32,19 +32,23 @@ func GetDichesHandler(provider RecipeProvider) http.Handler {
 			return
 		}
 
-		if query.Message == "" {
+		if query.Ingredients == "" {
 			http.Error(w, `{"message":"bad request body"}`, http.StatusBadRequest)
 			return
 		}
 
-		dishes, err := provider.GetDishes(query.Message)
+		dishes, err := provider.GetDishes(query.Ingredients)
 		if err != nil {
 			msg := fmt.Sprintf(`{"message":"%s"}`, err.Error())
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 
-		if err = json.NewEncoder(w).Encode(&dishes); err != nil {
+		responce := recipeprovider.DishResponse{
+			Dishes: dishes,
+		}
+
+		if err = json.NewEncoder(w).Encode(&responce); err != nil {
 			http.Error(w, `{"message":"error while encoding response"}`, http.StatusInternalServerError)
 			return
 		}
